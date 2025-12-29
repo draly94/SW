@@ -1,21 +1,25 @@
-// Minimal Service Worker for Online-Only PWA
-self.addEventListener('install', () => {
-    self.skipWaiting();
+// No cache name or assets list needed
+
+self.addEventListener('install', (event) => {
+  // Forces the waiting service worker to become the active service worker immediately
+  self.skipWaiting();
+  console.log('[SW] Installed');
 });
 
-self.addEventListener('activate', () => {
-    console.log('[PWA] Active and online-only');
+self.addEventListener('activate', (event) => {
+  // Delete all existing caches from previous versions
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    })
+  );
+  // Take control of all open tabs immediately
+  self.clients.claim();
+  console.log('[SW] Activated and Caches Cleared');
 });
 
-// Standard fetch listener (required for PWA installation)
+// NETWORK ONLY STRATEGY
 self.addEventListener('fetch', (event) => {
-    // Just fetch from the network without caching
-    event.respondWith(fetch(event.request));
-});
-self.addEventListener('push', (event) => {
-  const data = event.data.json();
-  self.registration.showNotification(data.title, {
-    body: data.body,
-    icon: '/sw/icon-192.png'
-  });
+  // Just fetch from the network and do nothing else
+  event.respondWith(fetch(event.request));
 });
