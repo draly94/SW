@@ -1,12 +1,12 @@
-// Register Service Worker for PWA installation
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Updated path for GitHub Pages subfolder
-        navigator.serviceWorker.register('/SW/sw.js')
-            .then(reg => console.log('[PWA] Service Worker registered'))
+        // Point specifically to your subfolder
+        navigator.serviceWorker.register('/SW/sw.js', { scope: '/SW/' })
+            .then(reg => console.log('[PWA] Service Worker registered at scope:', reg.scope))
             .catch(err => console.error('[PWA] Registration failed:', err));
     });
 }
+
 
 
 import { Icons } from './icons.js';
