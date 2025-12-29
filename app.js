@@ -435,11 +435,24 @@ function navigateTo(viewName, data = null) {
 
 async function handleSignOut() {
     state.isLoading = true;
-    renderDashboard();
-    try { await unsubscribeUser(); } catch (error) { console.error("Unsubscribe failed:", error); }
-    await supabaseClient.auth.signOut();
-    window.location.reload(); 
+    renderDashboard(); // Show loading spinner
+    
+    const { error } = await supabaseClient.auth.signOut();
+    
+    if (error) {
+        console.error("Error signing out:", error.message);
+        state.isLoading = false;
+        renderDashboard();
+    } else {
+        // Clear local cache/state and force go to login
+        state.session = null;
+        state.isLoading = false;
+        
+        // This is the most reliable way to clear PWA state on logout:
+        window.location.href = window.location.origin + window.location.pathname;
+    }
 }
+
 
 const loadAppData = async (userId, attempt = 1) => {
     state.isLoading = true;
