@@ -1,13 +1,11 @@
+// Register Service Worker for PWA installation
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Point specifically to your subfolder
-        navigator.serviceWorker.register('/SW/sw.js', { scope: '/SW/' })
-            .then(reg => console.log('[PWA] Service Worker registered at scope:', reg.scope))
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[PWA] Service Worker registered'))
             .catch(err => console.error('[PWA] Registration failed:', err));
     });
 }
-
-
 
 import { Icons } from './icons.js';
 import { t } from './translations.js';
