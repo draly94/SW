@@ -1,7 +1,7 @@
 import { Icons } from './icons.js';
+import { can } from './app.js'; // Ensure can is imported to check JWT permissions
 
 export function renderPatientFileView(patientId, el, supabaseClient, onBack, navigateTo) {
-    // 1. Create the container shell immediately
     const container = el('div', { className: 'view-container' });
     
     if (!patientId) {
@@ -9,7 +9,6 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
         return [container];
     }
 
-    // 2. Define an internal async function to handle the fetch and re-render
     const loadData = async () => {
         container.innerHTML = '<div style="text-align: center; padding: 40px; opacity: 0.6;">Loading Patient File...</div>';
         
@@ -24,7 +23,7 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
             return;
         }
 
-        container.innerHTML = ''; // Clear loading message
+        container.innerHTML = ''; 
 
         const calculateAge = (dobString) => {
             if (!dobString) return 'N/A';
@@ -34,7 +33,7 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
 
         const cleanPhone = patient.phone ? patient.phone.replace(/\D/g, '') : '';
 
-        // Build UI Components
+        // Corrected Header Logic
         const header = el('div', { className: 'view-header', style: 'margin-bottom: 8px;' },
             el('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start;' },
                 el('div', {},
@@ -43,7 +42,8 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
                         `${patient.id} • ${calculateAge(patient.dob)} yrs • ${patient.dob || 'No DOB'}`
                     )
                 ),
-                el('div', { style: 'display: flex; gap: 16px; padding-top: 8px;' },
+                // Fixed Syntax: Removed extra ] and properly closed the ternary
+                can('pat', 'c') ? el('div', { style: 'display: flex; gap: 16px; padding-top: 8px;' },
                     patient.phone ? el('span', { 
                         style: 'cursor: pointer; color: #25D366;',
                         onclick: () => window.open(`https://wa.me/${cleanPhone}`, '_blank'),
@@ -54,7 +54,7 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
                         onclick: () => window.location.href = `tel:${cleanPhone}`,
                         innerHTML: Icons?.phone ? Icons.phone(22) : '📞'
                     }) : null
-                )
+                ) : null
             )
         );
 
@@ -87,9 +87,7 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
         container.append(header, grid, backBtn);
     };
 
-    // 3. Trigger the load without making the whole function async
     loadData();
 
-    // 4. Return the shell immediately to the router
     return [container];
 }

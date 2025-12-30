@@ -1,6 +1,6 @@
 import { Icons } from './icons.js'; 
+import { can } from './app.js'; // - Import permission helper
 
-// Added onNavigate parameter
 export function renderPatientsView(state, el, supabaseClient, onNavigate) {
     const container = el('div', { className: 'view-container' });
     let latestPatients = [];
@@ -17,7 +17,6 @@ export function renderPatientsView(state, el, supabaseClient, onNavigate) {
         return el('div', { 
             className: 'content-card', 
             style: 'margin-bottom: 8px; cursor: pointer; border-left: 4px solid var(--primary);',
-            // Call onNavigate passing the view name and the patient object
             onclick: () => onNavigate('patient-file', patient.id) 
         },
             el('div', { style: 'display: flex; justify-content: space-between; align-items: center;' },
@@ -25,7 +24,8 @@ export function renderPatientsView(state, el, supabaseClient, onNavigate) {
                     el('div', { style: 'font-weight: 600;' }, patient.name),
                     el('div', { style: 'font-size: 0.8rem; opacity: 0.6;' }, `${calculateAge(patient.dob)} years old`)
                 ),
-                el('div', { style: 'display: flex; gap: 12px;' },
+                // Only show icons if user has 'create' permissions ('c') for patients ('pat')
+                can('pat', 'c') ? el('div', { style: 'display: flex; gap: 12px;' },
                     patient.phone ? el('span', { 
                         onclick: (e) => { e.stopPropagation(); window.open(`https://wa.me/${cleanPhone}`); },
                         innerHTML: Icons?.whatsapp ? Icons.whatsapp(18) : '💬' 
@@ -34,7 +34,7 @@ export function renderPatientsView(state, el, supabaseClient, onNavigate) {
                         onclick: (e) => { e.stopPropagation(); window.location.href = `tel:${cleanPhone}`; },
                         innerHTML: Icons?.phone ? Icons.phone(18) : '📞'
                     }) : null
-                )
+                ) : null
             )
         );
     };
@@ -44,17 +44,17 @@ export function renderPatientsView(state, el, supabaseClient, onNavigate) {
         
         // Header
         const header = el('div', {className: 'view-header',},
-    el('div', {},
-        el('h1', {}, 'Patients Management'),
-        el('p', { className: 'view-subtitle' }, 'Search registry or view recent arrivals')
-    ),
-    // New Plus Button
-    el('button', { 
-        className: 'primary-btn circular-btn', 
-          onclick: () => onNavigate('new-patient') 
-    }, '+')
-);
-        // Fetch Latest Patients if not already loaded
+            el('div', {},
+                el('h1', {}, 'Patients Management'),
+                el('p', { className: 'view-subtitle' }, 'Search registry or view recent arrivals')
+            ),
+            // Also secure the Plus Button so only those with 'c' permission can see it
+            can('pat', 'c') ? el('button', { 
+                className: 'primary-btn circular-btn', 
+                onclick: () => onNavigate('new-patient') 
+            }, '+') : null
+        );
+
         if (latestPatients.length === 0) {
             const { data } = await supabaseClient
                 .from('patients')
@@ -106,15 +106,12 @@ export function renderPatientsView(state, el, supabaseClient, onNavigate) {
             }
         });
 
-        // Layout wrapper for side-by-side
         const layoutGrid = el('div', { className: 'patient-layout-grid' },
-            // Left Column: Search
             el('div', { className: 'search-column' },
                 el('div', { className: 'section-title' }, 'Find Patient'),
                 el('div', { className: 'content-card' }, searchInput),
                 searchResultsContainer
             ),
-            // Right Column: Latest
             latestContainer
         );
 
