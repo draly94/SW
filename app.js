@@ -510,7 +510,7 @@ async function subscribeToPush() {
     if (permission === 'granted') {
         const sub = await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: 'BHgvMYmv0t0zKzjjclSMGbBlOWkjRsnyRcnwHhWNvhXS-e53vC3HODRONy2qNvMZmHcSVDZb6FM5VVRgQdZoV0A'
+            applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
         });
         const subJSON = JSON.parse(JSON.stringify(sub));
         const { data: existing } = await supabaseClient.from('user_subscriptions').select('id').eq('subscription_json->>endpoint', subJSON.endpoint).maybeSingle();
