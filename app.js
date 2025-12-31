@@ -1,3 +1,5 @@
+console.log("All Env Vars:", import.meta.env);
+
 // Register Service Worker for PWA installation
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
