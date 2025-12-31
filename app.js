@@ -24,8 +24,8 @@ import { renderAppointmentsView } from './appointments.js';
 import { renderNewAppointmentView } from './newAppointment.js';
 
 //------ Configuration ------
-const SUPABASE_URL = 'https://ytsjknqlksyylfjkzmar.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0c2prbnFsa3N5eWxmamt6bWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1ODUyODMsImV4cCI6MjA4MTE2MTI4M30.f-_DqejEjTLgVQQ5II4r1F1sadeZEhZRKTrw5B1T_6g';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = document.getElementById('app');
