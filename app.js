@@ -1,5 +1,3 @@
-console.log("All Env Vars:", import.meta.env);
-
 // Register Service Worker for PWA installation
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -22,12 +20,13 @@ import { renderPatientsView } from './patients.js';
 import { renderNewPatientView } from './newPatient.js';
 import { renderPatientFileView } from './patientFile.js';
 import { renderPatientInfoView } from './patientInfo.js'; 
+import { renderPatientAppointmentsView } from './patientAppointments.js';
 import { renderAppointmentsView } from './appointments.js';
 import { renderNewAppointmentView } from './newAppointment.js';
 
 //------ Configuration ------
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
+const SUPABASE_URL = 'https://ytsjknqlksyylfjkzmar.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0c2prbnFsa3N5eWxmamt6bWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1ODUyODMsImV4cCI6MjA4MTE2MTI4M30.f-_DqejEjTLgVQQ5II4r1F1sadeZEhZRKTrw5B1T_6g';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = document.getElementById('app');
@@ -281,6 +280,7 @@ function renderDashboard() {
         'new-patient': () => renderNewPatientView(state, el, supabaseClient, () => navigateTo('patients')),
         'patient-file': () => renderPatientFileView(state.viewData, el, supabaseClient, () => navigateTo('patients'), navigateTo),
         'patient-info': () => renderPatientInfoView(state.viewData, el, supabaseClient, () => window.history.back()),
+        'patient-appointments': () => renderPatientAppointmentsView(state.viewData, el, supabaseClient, () => window.history.back()),
         'appointments': () => renderAppointmentsView(state, el, supabaseClient, navigateTo),
         'new-appointment': () => renderNewAppointmentView(state, el, supabaseClient, () => navigateTo('appointments'), state.viewData)
     };
@@ -512,7 +512,7 @@ async function subscribeToPush() {
     if (permission === 'granted') {
         const sub = await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+            applicationServerKey: 'BHgvMYmv0t0zKzjjclSMGbBlOWkjRsnyRcnwHhWNvhXS-e53vC3HODRONy2qNvMZmHcSVDZb6FM5VVRgQdZoV0A'
         });
         const subJSON = JSON.parse(JSON.stringify(sub));
         const { data: existing } = await supabaseClient.from('user_subscriptions').select('id').eq('subscription_json->>endpoint', subJSON.endpoint).maybeSingle();

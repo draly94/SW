@@ -1,5 +1,5 @@
 import { Icons } from './icons.js';
-import { can } from './app.js'; // Ensure can is imported to check JWT permissions
+import { can } from './app.js';
 
 export function renderPatientFileView(patientId, el, supabaseClient, onBack, navigateTo) {
     const container = el('div', { className: 'view-container' });
@@ -33,39 +33,38 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
 
         const cleanPhone = patient.phone ? patient.phone.replace(/\D/g, '') : '';
 
-        // Corrected Header Logic
         const header = el('div', { className: 'view-header', style: 'margin-bottom: 8px;' },
-            el('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start;' },
+            el('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start; width: 100%;' },
                 el('div', {},
                     el('h1', {}, patient.name),
                     el('p', { className: 'view-subtitle' }, 
                         `${patient.id} • ${calculateAge(patient.dob)} yrs • ${patient.dob || 'No DOB'}`
                     )
                 ),
-                // Fixed Syntax: Removed extra ] and properly closed the ternary
                 can('pat', 'c') ? el('div', { style: 'display: flex; gap: 16px; padding-top: 8px;' },
                     patient.phone ? el('span', { 
-                        style: 'cursor: pointer; color: #25D366;',
+                        style: 'cursor: pointer;',
                         onclick: () => window.open(`https://wa.me/${cleanPhone}`, '_blank'),
-                        innerHTML: Icons?.whatsapp ? Icons.whatsapp(22) : '💬' 
+                        innerHTML: Icons.whatsapp(24) // WhatsApp maintains its green stroke from icons.js
                     }) : null,
                     patient.phone ? el('span', { 
-                        style: 'cursor: pointer; color: var(--primary);',
+                        // Using var(--primary) ensures this flips white/black based on theme
+                        style: 'cursor: pointer; color: var(--primary);', 
                         onclick: () => window.location.href = `tel:${cleanPhone}`,
-                        innerHTML: Icons?.phone ? Icons.phone(22) : '📞'
+                        innerHTML: Icons.phone(24)
                     }) : null
                 ) : null
             )
         );
 
         const actionButtons = [
-            { label: 'Information', icon: 'ℹ️', onclick: () => navigateTo('patient-info', patient.id) },
-            { label: 'Appointments', icon: '📅' },
-            { label: 'Procedures', icon: '💉' },
-            { label: 'Lab Orders', icon: '🧪' },
-            { label: 'Prescriptions', icon: '💊' },
-            { label: 'Transactions', icon: '💰' },
-            { label: 'Medical History', icon: '📜' }
+            { label: 'Information', icon: Icons.info(24), onclick: () => navigateTo('patient-info', patient.id) },
+            { label: 'Appointments', icon: Icons.appointments(24), onclick: () => navigateTo('patient-appointments', patient.id)  },
+            { label: 'Procedures', icon: Icons.procedure(24), onclick: () => {} },
+            { label: 'Lab Orders', icon: Icons.lab(24), onclick: () => {} },
+            { label: 'Prescriptions', icon: Icons.prescription(24), onclick: () => {} },
+            { label: 'Transactions', icon: Icons.finance(24), onclick: () => {} },
+            { label: 'Medical History', icon: Icons.history(24), onclick: () => {} }
         ];
 
         const grid = el('div', { className: 'action-grid' }, 
@@ -73,16 +72,17 @@ export function renderPatientFileView(patientId, el, supabaseClient, onBack, nav
                 className: 'content-card action-btn', 
                 onclick: btn.onclick
             }, 
-                el('span', { style: 'font-size: 1.2rem;' }, btn.icon),
+                // Set color to var(--text) so stroke="currentColor" works in dark mode
+                el('span', { style: 'color: var(--text); display: flex;', innerHTML: btn.icon }),
                 el('span', { className: 'grid-label' }, btn.label)
             ))
         );
 
         const backBtn = el('button', { 
             className: 'primary-btn', 
-            style: 'margin-top: 8px; width: 100%;',
+            style: 'margin-top: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;',
             onclick: onBack 
-        }, '← Back to Patients');
+        }, el('span', { style: 'display: flex;', innerHTML: Icons.back(18) }), 'Back to Patients');
 
         container.append(header, grid, backBtn);
     };
