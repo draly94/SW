@@ -11,10 +11,34 @@ export const translations = {
         settings: "Settings",
         signout: "Sign Out",
         workspace: "Workspace",
+        subscriptionExpiredWarning: "Subscription Expired. Some features may be limited. Please contact support.",
+        selectBranch: "Select Branch",
+        
+        
+        // Auth Module
+        email: "Email",
+        password: "Password",
+        signin: "Sign In",
+        signingIn: "Signing in...",
+        continue: "Continue",
+        needAccount: "Need to set up your account? ",
+        registerHere: "Register Here",
+        newPassword: "New Password",
+        confirmPassword: "Confirm Password",
+        setPassTitle: "Set Your Password",
+        setPassSubtitle: "Create a password to secure your account.",
+        setPassBtn: "Set Password",
+        updating: "Updating...",
+        passSetSuccess: "Password set successfully. Please complete your profile.",
+        fillAllFields: "Please fill in both password fields.",
+        passMismatch: "Passwords do not match.",
+        passTooShort: "Password must be at least 6 characters.",
+
         // connection error
-        connectionErrorTitle:"Connection issue",
-        connectionErrorBody:"It’s taking longer than usual to load your data.",
-        connectionErrorBtn:"Try Again",
+        connectionErrorTitle: "Connection issue",
+        connectionErrorBody: "It’s taking longer than usual to load your data.",
+        connectionErrorBtn: "Try Again",
+        
         // Common Actions
         save: "Save",
         cancel: "Cancel",
@@ -25,6 +49,8 @@ export const translations = {
         
         // overview page
         overviewWelcome: "Welcome back ",
+        accountStatus: "Account Status",
+        workspaceActive: "Your workspace is active and synced.",
         
         // Settings Page
         appearance: "Appearance",
@@ -36,7 +62,58 @@ export const translations = {
         inventoryConfig: "Inventory Configuration",
         pricingConfig: "Pricing Configuration",
         manageCats: "Manage categories and sub-categories",
-        managePricing: "Manage pricing tiers and groups"
+        managePricing: "Manage pricing tiers and groups",
+                // Profile Page
+        profileTitle: "User Profile",
+        profileSubtitle: "Update your personal information",
+        accountDetails: "Account Details",
+        fullName: "Full Name",
+        emailAddress: "Email Address",
+        phoneNumber: "Phone Number",
+        namePlaceholder: "Enter your name",
+        phonePlaceholder: "Enter your phone number",
+        saveChanges: "Save Changes",
+        updateSuccess: "Updated successfully!",
+        updateError: "Failed to update",
+        loadingName: "Loading name...",
+        loadingPhone: "Loading phone...",
+patientsManagement: "Patients Management",
+patientsSubtitle: "Search registry or view recent arrivals",
+recentPatients: "Recent Patients",
+findPatient: "Find Patient",
+searchPlaceholder: "Type to search...",
+searching: "Searching...",
+noResults: "No results found.",
+yearsOld: "years old",
+na: "N/A",
+noPatientSelected: "No patient selected.",
+loadingPatientFile: "Loading Patient File...",
+errorLoadingPatient: "Error loading patient record.",
+noDob: "No Date of Birth",
+backToPatients: "Back to Patients",
+information: "Information",
+procedures: "Procedures",
+labOrders: "Lab Orders",
+prescriptions: "Prescriptions",
+transactions: "Transactions",
+medicalHistory: "Medical History",
+// Add these to 'en' block
+patientInformation: "Patient Information",
+editPatientDetails: "Edit Patient Details",
+manageDataFor: "Manage data for",
+patient: "Patient",
+dob: "Date of Birth",
+address: "Address",
+nationalId: "National ID / Passport",
+editDetails: "Edit Details",
+loadingPatientInfo: "Loading Patient Information...",
+failedToLoadRecord: "Failed to load patient record.",
+notProvided: "Not provided",
+saving: "Saving...",
+
+
+
+
     },
     ar: {
         // Sidebar / Navigation
@@ -49,10 +126,32 @@ export const translations = {
         settings: "الإعدادات",
         signout: "تسجيل الخروج",
         workspace: "مساحة العمل",
+        subscriptionExpiredWarning: "لقد انتهى الاشتراك. قد تكون بعض الميزات محدودة. يرجى الاتصال بالدعم.",
+        selectBranch: "اختر الفرع",
+
+        // Auth Module
+        email: "البريد الإلكتروني",
+        password: "كلمة المرور",
+        signin: "تسجيل الدخول",
+        signingIn: "جاري تسجيل الدخول...",
+        continue: "استمرار",
+        needAccount: "هل تحتاج إلى إعداد حسابك؟ ",
+        registerHere: "سجل هنا",
+        newPassword: "كلمة المرور الجديدة",
+        confirmPassword: "تأكيد كلمة المرور",
+        setPassTitle: "تعيين كلمة المرور",
+        setPassSubtitle: "أنشئ كلمة مرور لتأمين حسابك.",
+        setPassBtn: "تعيين كلمة المرور",
+        updating: "جاري التحديث...",
+        passSetSuccess: "تم تعيين كلمة المرور بنجاح. يرجى إكمال ملفك الشخصي.",
+        fillAllFields: "يرجى ملء كلا حقلي كلمة المرور.",
+        passMismatch: "كلمات المرور غير متطابقة.",
+        passTooShort: "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
+
         // connection error
-        connectionErrorTitle:"مشكلة في الاتصال",
-        connectionErrorBody:"يستغرق تحميل بياناتك وقتاً أطول من المعتاد.",
-        connectionErrorBtn:"إعادة المحاولة",
+        connectionErrorTitle: "مشكلة في الاتصال",
+        connectionErrorBody: "يستغرق تحميل بياناتك وقتاً أطول من المعتاد.",
+        connectionErrorBtn: "إعادة المحاولة",
         
         // Common Actions
         save: "حفظ",
@@ -63,7 +162,9 @@ export const translations = {
         delete: "حذف",
         
         // overview page
-        overviewWelcome:"مرحبا بك ",
+        overviewWelcome: "مرحبا بك",
+        accountStatus: "حالة الحساب",
+        workspaceActive: "مساحة العمل الخاصة بك نشطة ومتزامنة.",
 
         // Settings Page
         appearance: "المظهر",
@@ -75,15 +176,60 @@ export const translations = {
         inventoryConfig: "تكوين المخزون",
         pricingConfig: "تكوين التسعير",
         manageCats: "إدارة الفئات والفئات الفرعية",
-        managePricing: "إدارة فئات ومجموعات التسعير"
+        managePricing: "إدارة فئات ومجموعات التسعير",
+               // Profile Page
+        profileTitle: "الملف الشخصي",
+        profileSubtitle: "تحديث معلوماتك الشخصية",
+        accountDetails: "تفاصيل الحساب",
+        fullName: "الاسم الكامل",
+        emailAddress: "البريد الإلكتروني",
+        phoneNumber: "رقم الهاتف",
+        namePlaceholder: "أدخل اسمك",
+        phonePlaceholder: "أدخل رقم الهاتف",
+        saveChanges: "حفظ التغييرات",
+        updateSuccess: "تم التحديث بنجاح!",
+        updateError: "فشل في التحديث",
+        loadingName: "جاري تحميل الاسم...",
+        loadingPhone: "جاري تحميل الهاتف...",
+        patientsManagement: "إدارة المرضى",
+patientsSubtitle: "ابحث في السجل أو عرض القادمين الجدد",
+recentPatients: "المرضى الأخيرون",
+findPatient: "البحث عن مريض",
+searchPlaceholder: "اكتب للبحث...",
+searching: "جاري البحث...",
+noResults: "لم يتم العثور على نتائج.",
+yearsOld: "سنة",
+na: "غير متوفر",
+
+
+noPatientSelected: "لم يتم اختيار مريض.",
+loadingPatientFile: "جاري تحميل ملف المريض...",
+errorLoadingPatient: "خطأ في تحميل سجل المريض.",
+noDob: "لا يوجد تاريخ ميلاد",
+backToPatients: "العودة للمرضى",
+information: "معلومات",
+procedures: "الإجراءات",
+labOrders: "طلبات المختبر",
+prescriptions: "الوصفات الطبية",
+transactions: "المعاملات المالية",
+medicalHistory: "التاريخ الطبي",
+
+patientInformation: "معلومات المريض",
+editPatientDetails: "تعديل بيانات المريض",
+manageDataFor: "إدارة بيانات",
+patient: "مريض",
+dob: "تاريخ الميلاد",
+address: "العنوان",
+nationalId: "الهوية الوطنية / الجواز",
+editDetails: "تعديل البيانات",
+loadingPatientInfo: "جاري تحميل معلومات المريض...",
+failedToLoadRecord: "فشل في تحميل سجل المريض.",
+notProvided: "غير متوفر",
+saving: "جاري الحفظ...",
+
     }
 };
 
-/**
- * Helper function to get translated text
- * @param {string} key - The translation key
- * @param {string} lang - Current language ('en' or 'ar')
- */
 export function t(key, lang = 'en') {
     return translations[lang]?.[key] || translations['en']?.[key] || key;
 }

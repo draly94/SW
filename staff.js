@@ -145,6 +145,18 @@ async function resendInvitation(email, btn) {
                     }, '↺ Resend Invite');
                     card.appendChild(resendBtn);
                 }
+// Inside allItems.forEach(item => { ... }) in staff.js
+if (!isPending) {
+    const editPermsBtn = el('button', {
+        className: 'secondary-btn-small',
+        style: 'margin-top: 10px; width: 100%;',
+        onclick: () => navigateTo('edit-permissions', { 
+            user_id: item.user_id, 
+            name: displayName 
+        })
+    }, '⚙ Edit Permissions');
+    card.appendChild(editPermsBtn);
+}
 
                 staffListContainer.appendChild(card);
             });

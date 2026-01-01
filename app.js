@@ -6,7 +6,7 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.error('[PWA] Registration failed:', err));
     });
 }
-
+import { initAuth } from './auth.js';
 import { Icons } from './icons.js';
 import { t } from './translations.js';
 import { renderOverviewView } from './overview.js';
@@ -14,6 +14,7 @@ import { renderSettingsView } from './settings.js';
 import { renderProfileView } from './profile.js';
 import { renderStaffView } from './staff.js';
 import { renderAddStaffView } from './addStaff.js';
+import { renderEditPermissionsView } from './editPermissions.js';
 import { renderInventoryView } from './inventory.js';
 import { renderAddItemView } from './addInventoryItem.js';
 import { renderPatientsView } from './patients.js';
@@ -43,10 +44,11 @@ const state = {
     isLoading: isMagicLink,
     branches: [], 
     selectedBranchId: null,
+    permissions: [], 
     error: null,
     toast: { message: '', type: 'success', visible: false },
-    isMagicLink: isMagicLink, // Store this to control UI visibility
-    isRegistration: false // Changed: Do not force registration view immediately
+    isMagicLink: isMagicLink, 
+    isRegistration: false 
 };
 
 // --- Core Utilities ---
@@ -61,29 +63,28 @@ export function el(tag, props = {}, ...children) {
     });
     return element;
 }
-/**
- * Checks if the current user has a specific permission for a resource in the selected branch.
- * @param {string} resource - The resource key (e.g., 'apt', 'inv', 'pat')
- * @param {string} action - The action character (e.g., 'c', 'r', 'u', 'd')
- * @returns {boolean}
- */
+
 export function can(resource, action) {
-    if (!state.session || !state.selectedBranchId) return false;
+    if (!state.session || !state.selectedBranchId || !state.permissions) return false;
+    return state.permissions.includes(`${resource}_${action}`);
+}
 
-    const branchPerms = state.session.user.app_metadata?.branch_perms?.[state.selectedBranchId];
-    
-    if (!branchPerms) return false;
+/**
+ * Checks if the currently selected branch has an expired subscription.
+ */
+function isSubscriptionExpired() {
+    const currentBranch = state.branches.find(b => b.id === state.selectedBranchId);
+    if (!currentBranch || !currentBranch.expiresAt) return false;
+    // Compare current date to expiration date
+    return new Date() > currentBranch.expiresAt;
+}
 
-    // 1. Check if the branch access is expired
-    const expiryDate = new Date(branchPerms.e);
-    if (expiryDate < new Date()) {
-        console.warn("Branch access expired");
-        return false;
-    }
-
-    // 2. Check the permission string inside the 'p' object
-    const permissions = branchPerms.p?.[resource] || '';
-    return permissions.includes(action);
+export function injectStyles(id, css) {
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = css;
+    document.head.appendChild(style);
 }
 
 export function renderCustomDropdown(options, selectedId, onSelect, placeholder = "Select...") {
@@ -174,6 +175,7 @@ export function showToast(message, type = 'success') {
 function initializeShell() {
     const currentBranch = state.branches.find(b => b.id === state.selectedBranchId);
     const displayTitle = currentBranch ? currentBranch.orgName : 'App Console';
+    
     if (document.getElementById('layout-shell')) {
         const titleEl = document.querySelector('.header-title');
         if (titleEl) titleEl.textContent = displayTitle;
@@ -182,27 +184,41 @@ function initializeShell() {
             selectorContainer.innerHTML = '';
             selectorContainer.appendChild(createBranchSelector());
         }
-        return;
+    } else {
+        app.innerHTML = '';
+        applyTheme();
+        document.documentElement.dir = state.language === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = state.language;
+        const overlay = el('div', { id: 'overlay', onclick: () => toggleSidebar(true) });
+        const menuBtn = el('button', { className: 'menu-toggle', onclick: (e) => { e.stopPropagation(); toggleSidebar(); }}, '≡');
+        const header = el('header', { id: 'app-header' }, 
+            menuBtn, 
+            el('span', { className: 'header-title' }, displayTitle),
+            el('div', { style: 'flex: 1' }),
+            el('div', { id: 'selector-container' }, createBranchSelector())
+        );
+        const sidebar = el('aside', { id: 'sidebar' }, 
+            el('div', { className: 'sidebar-content', id: 'sidebar-nav-container' })
+        );
+        const mainContainer = el('main', { id: 'main-content' });
+        const toastEl = el('div', { id: 'global-toast', className: 'toast' });
+        const shell = el('div', { id: 'layout-shell' }, overlay, sidebar, header, mainContainer, toastEl);
+        app.appendChild(shell);
     }
-    app.innerHTML = '';
-    applyTheme();
-    document.documentElement.dir = state.language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = state.language;
-    const overlay = el('div', { id: 'overlay', onclick: () => toggleSidebar(true) });
-    const menuBtn = el('button', { className: 'menu-toggle', onclick: (e) => { e.stopPropagation(); toggleSidebar(); }}, '≡');
-    const header = el('header', { id: 'app-header' }, 
-        menuBtn, 
-        el('span', { className: 'header-title' }, displayTitle),
-        el('div', { style: 'flex: 1' }),
-        el('div', { id: 'selector-container' }, createBranchSelector())
-    );
-    const sidebar = el('aside', { id: 'sidebar' }, 
-        el('div', { className: 'sidebar-content', id: 'sidebar-nav-container' })
-    );
-    const mainContainer = el('main', { id: 'main-content' });
-    const toastEl = el('div', { id: 'global-toast', className: 'toast' });
-    const shell = el('div', { id: 'layout-shell' }, overlay, sidebar, header, mainContainer, toastEl);
-    app.appendChild(shell);
+
+    // Handle Expiration Warning
+    const mainContent = document.getElementById('main-content');
+    const existingWarning = document.getElementById('expiry-warning');
+    if (existingWarning) existingWarning.remove();
+
+    if (isSubscriptionExpired()) {
+        const warningBanner = el('div', { 
+            id: 'expiry-warning',
+            className: 'warning-banner',
+            style: 'background-color: #fee2e2; color: #991b1b; padding: 12px; text-align: center; border-bottom: 1px solid #f87171; font-weight: 600; font-size: 0.9rem; z-index: 10;'
+        }, `⚠️ ${t('subscriptionExpiredWarning', state.language) || 'Subscription Expired. Please contact support.'}`);
+        mainContent.prepend(warningBanner);
+    }
 }
 
 function createBranchSelector() {
@@ -216,6 +232,8 @@ function createBranchSelector() {
         state.selectedBranchId, 
         (id) => {
             state.selectedBranchId = id;
+            const activeBranch = state.branches.find(b => b.id === id);
+            state.permissions = activeBranch ? activeBranch.permissions : [];
             renderDashboard();
         },
         t('selectBranch', state.language)
@@ -267,137 +285,36 @@ function renderDashboard() {
     }));
     navContainer.appendChild(navGroup);
 
-    mainContent.innerHTML = '';
+    // Filter out previous view contents, but keep the warning banner if it exists
     const viewContainer = el('div', { className: 'view-container' });
     const viewRoutes = {
         'settings': () => renderSettingsView(state, el, applyTheme, supabaseClient, showToast),
-        'profile': () => renderProfileView(state.session, el, supabaseClient, showToast),
+        'profile': () => renderProfileView(state, el, supabaseClient, showToast, injectStyles, t),
         'staff': () => renderStaffView(state, el, supabaseClient, navigateTo),
         'add-staff': () => renderAddStaffView(state, el, supabaseClient, () => navigateTo('staff')),
+        'edit-permissions': () => renderEditPermissionsView(state, el, supabaseClient, navigateTo, showToast, t),
         'inventory': () => renderInventoryView(state, el, supabaseClient, showToast, navigateTo),
         'add-inventory-item': () => renderAddItemView(state, el, supabaseClient, showToast, () => navigateTo('inventory')),
-        'patients': () => renderPatientsView(state, el, supabaseClient, navigateTo),
+        'patients': () => renderPatientsView(state, el, supabaseClient, navigateTo, injectStyles, t),
         'new-patient': () => renderNewPatientView(state, el, supabaseClient, () => navigateTo('patients')),
-        'patient-file': () => renderPatientFileView(state.viewData, el, supabaseClient, () => navigateTo('patients'), navigateTo),
-        'patient-info': () => renderPatientInfoView(state.viewData, el, supabaseClient, () => window.history.back()),
+        'patient-file': () => renderPatientFileView(state, el, supabaseClient, () => navigateTo('patients'), navigateTo, injectStyles, t),
+        'patient-info': () => renderPatientInfoView(state, el, supabaseClient, () => window.history.back(),showToast, injectStyles, t),
         'patient-appointments': () => renderPatientAppointmentsView(state.viewData, el, supabaseClient, () => window.history.back()),
         'appointments': () => renderAppointmentsView(state, el, supabaseClient, navigateTo),
         'new-appointment': () => renderNewAppointmentView(state, el, supabaseClient, () => navigateTo('appointments'), state.viewData)
     };
-    const renderFn = viewRoutes[state.currentView] || (() => renderOverviewView(state, el));
+    
+    const renderFn = viewRoutes[state.currentView] || (() => renderOverviewView(state, el, injectStyles, t));
+    
+    // Clear everything EXCEPT the warning banner
+    const warning = document.getElementById('expiry-warning');
+    mainContent.innerHTML = '';
+    if (warning) mainContent.appendChild(warning);
+    
     viewContainer.append(...renderFn());
     mainContent.appendChild(viewContainer);
     if (state.isLoading) mainContent.appendChild(renderLoading());
 }
-
-// --- Auth & Error States ---
-
-function renderLogin() {
-    // If the user manually triggered registration flow, show that
-    if (state.isRegistration) {
-        renderRegistration();
-        return;
-    }
-    app.innerHTML = '';
-    applyTheme();
-    document.documentElement.dir = state.language === 'ar' ? 'rtl' : 'ltr';
-    const emailInp = el('input', { type: 'email', placeholder: 'Email' });
-    const passInp = el('input', { type: 'password', placeholder: 'Password' });
-    const handleLogin = async () => {
-        if (state.isLoading) return;
-        state.isLoading = true;
-        renderLogin(); 
-        const { error } = await supabaseClient.auth.signInWithPassword({ email: emailInp.value, password: passInp.value });
-        if (error) { state.isLoading = false; renderLogin(); alert(error.message); }
-    };
-    
-    const loginCard = el('div', { className: 'auth-card' },
-        el('h2', { className: 'auth-header' }, 'Sign In'),
-        emailInp, passInp,
-        el('button', { className: 'primary-btn', onclick: handleLogin }, state.isLoading ? 'Signing in...' : 'Continue')
-    );
-
-    // Only show registration option if accessing via Magic Link / Invite
-    if (state.isMagicLink) {
-        const registerLink = el('div', { 
-            style: 'margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--text-secondary);' 
-        }, 
-            'Need to set up your account? ',
-            el('button', { 
-                style: 'background:none; border:none; color:var(--primary-color); cursor:pointer; font-weight:bold; padding:0;',
-                onclick: () => {
-                    state.isRegistration = true;
-                    renderRegistration();
-                }
-            }, 'Register Here')
-        );
-        loginCard.appendChild(registerLink);
-    }
-
-    app.appendChild(el('div', { className: 'auth-container' }, loginCard));
-}
-
-function renderRegistration() {
-    app.innerHTML = '';
-    applyTheme();
-    
-    const passInp = el('input', { type: 'password', placeholder: 'New Password' });
-    const confirmPassInp = el('input', { type: 'password', placeholder: 'Confirm Password' });
-    
-    const handleRegistration = async () => {
-        const password = passInp.value;
-        const confirm = confirmPassInp.value;
-
-        if (!password || !confirm) {
-            return alert("Please fill in both password fields.");
-        }
-        if (password !== confirm) {
-            return alert("Passwords do not match.");
-        }
-        if (password.length < 6) {
-            return alert("Password must be at least 6 characters.");
-        }
-
-        state.isLoading = true;
-        renderRegistration(); 
-
-        const { data, error } = await supabaseClient.auth.updateUser({ 
-            password: password
-        });
-
-        if (error) {
-            state.isLoading = false; 
-            renderRegistration(); 
-            alert(error.message); 
-        } else {
-            state.isLoading = false; 
-            state.isRegistration = false; 
-            
-            // 1. First, fetch the necessary app data (branches, etc.)
-            await loadAppData(state.session.user.id);
-            
-            // 2. Override the default view to 'profile' immediately after loading
-            navigateTo('profile');
-            
-            showToast("Password set successfully. Please complete your profile.");
-        }
-    };
-
-    app.appendChild(el('div', { className: 'auth-container' }, 
-        el('div', { className: 'auth-card' },
-            el('h2', { className: 'auth-header' }, 'Set Your Password'),
-            el('p', { style: 'margin-bottom: 20px; color: var(--text-secondary); font-size: 0.9rem;' }, 
-                'Create a password to secure your account.'
-            ),
-            passInp, 
-            confirmPassInp,
-            el('button', { className: 'primary-btn', onclick: handleRegistration }, 
-                state.isLoading ? 'Updating...' : 'Set Password'
-            ),
-        )
-    ));
-}
-
 
 function renderErrorState() {
     app.innerHTML = '';
@@ -414,7 +331,6 @@ function renderErrorState() {
 // --- Logic & Events ---
 
 function navigateTo(viewName, data = null) {
-    // Define required permissions for specific routes
     const guards = {
         'add-inventory-item': () => can('inv', 'c'),
         'add-staff': () => can('staff', 'c'),
@@ -422,7 +338,6 @@ function navigateTo(viewName, data = null) {
         'new-appointment': () => can('apt', 'c')
     };
 
-    // If a guard exists for this view and it returns false, block navigation
     if (guards[viewName] && !guards[viewName]()) {
         showToast(t('unauthorized', state.language), 'error');
         return;
@@ -434,27 +349,21 @@ function navigateTo(viewName, data = null) {
     renderDashboard();
 }
 
-
 async function handleSignOut() {
     state.isLoading = true;
-    renderDashboard(); // Show loading spinner
-    
+    renderDashboard(); 
     const { error } = await supabaseClient.auth.signOut();
-    
     if (error) {
         console.error("Error signing out:", error.message);
         state.isLoading = false;
         renderDashboard();
     } else {
-        // Clear local cache/state and force go to login
         state.session = null;
+        state.permissions = []; 
         state.isLoading = false;
-        
-        // This is the most reliable way to clear PWA state on logout:
         window.location.href = window.location.origin + window.location.pathname;
     }
 }
-
 
 const loadAppData = async (userId, attempt = 1) => {
     state.isLoading = true;
@@ -469,11 +378,18 @@ const loadAppData = async (userId, attempt = 1) => {
             });
             if (error) console.error("RPC Error:", error.message);
         }
+        
         const branches = await fetchUserBranches(userId);
         state.branches = branches;
-        if (branches.length > 0 && !state.selectedBranchId) {
-            state.selectedBranchId = branches[0].id;
+        
+        if (branches.length > 0) {
+            if (!state.selectedBranchId) {
+                state.selectedBranchId = branches[0].id;
+            }
+            const activeBranch = branches.find(b => b.id === state.selectedBranchId);
+            state.permissions = activeBranch ? activeBranch.permissions : [];
         }
+
     } catch (err) {
         console.error("App data load error:", err);
         if (attempt < 5) return loadAppData(userId, attempt + 1);
@@ -488,22 +404,48 @@ async function fetchUserBranches(userId) {
     const { data, error } = await supabaseClient
         .from('user_branches')
         .select(`
-            branch_id, 
+            *, 
             org_branches(
                 branch_name, 
-                created_at,
-                organizations(name)
+                organizations(
+                    name
+                )
             )
         `)
         .eq('user_id', userId);
+
     if (error) throw error;
-    return (data || []).filter(i => i.org_branches).map(i => ({
-        id: i.branch_id,
-        name: i.org_branches.branch_name,
-        orgName: i.org_branches.organizations?.name || 'App Console',
-        createdAt: new Date(i.org_branches.created_at)
-    })).sort((a, b) => a.createdAt - b.createdAt);
+
+    return (data || []).filter(i => i.org_branches).map(row => {
+        // 1. Destructure ALL non-permission columns shown in your schema image
+        const { 
+            id,
+            user_id, 
+            branch_id, 
+            role, 
+            created_by, 
+            created_at, 
+            subscription_expires_at, 
+            org_branches,
+            ...permissionsFields 
+        } = row;
+        
+        // 2. Map the remaining boolean fields (pat_r, apt_c, etc.)
+        const activePermissions = Object.keys(permissionsFields)
+            .filter(key => permissionsFields[key] === true);
+
+        return {
+            id: branch_id,
+            role: role, // You can now use state.branches[0].role in your UI
+            name: org_branches.branch_name,
+            orgName: org_branches.organizations?.name || 'App Console',
+            joinedAt: new Date(created_at),
+            expiresAt: subscription_expires_at ? new Date(subscription_expires_at) : null,
+            permissions: activePermissions 
+        };
+    }).sort((a, b) => a.joinedAt - b.joinedAt);
 }
+
 
 async function subscribeToPush() {
     if (!('serviceWorker' in navigator)) return;
@@ -522,49 +464,29 @@ async function subscribeToPush() {
     }
 }
 
-async function unsubscribeUser() {
-    if (!('serviceWorker' in navigator)) return;
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-    if (subscription) {
-        await supabaseClient.from('user_subscriptions').delete().eq('subscription_json->>endpoint', subscription.endpoint);
-        await subscription.unsubscribe();
-    }
-}
+const auth = initAuth(state, el, applyTheme, supabaseClient, loadAppData, navigateTo, showToast, injectStyles, t);
 
-// --- Lifecycle ---
-
-// app.js - Update the lifecycle listener
-// app.js
-// app.js - Optimized Lifecycle
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
     state.session = session;
-
     if (session) {
-        // If we detected a magic link hash or the event is a password recovery/signup
-        // we force the registration state to true
         if (state.isMagicLink || event === 'PASSWORD_RECOVERY') {
             state.isRegistration = true;
-            state.isMagicLink = false; // Clear it so it doesn't loop
+            state.isMagicLink = false;
             state.isLoading = false;
-            renderRegistration();
+            auth.renderRegistration();
         } 
         else if (state.isRegistration) {
-            // Safety check if state was already set
-            renderRegistration();
+            auth.renderRegistration();
         }
         else {
-            // Normal login flow
             loadAppData(session.user.id);
             subscribeToPush();
         }
     } else {
         state.isLoading = false;
-        renderLogin();
+        auth.renderLogin();
     }
 });
-
-
 
 window.addEventListener('popstate', (e) => {
     if (e.state) {
@@ -577,10 +499,9 @@ window.addEventListener('popstate', (e) => {
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (state.theme === 'device') applyTheme();
 });
-// Prevent accidental navigation/closing during registration
+
 window.addEventListener('beforeunload', (e) => {
     if (state.isRegistration) {
-        // Standard way to trigger the browser's confirmation dialog
         e.preventDefault();
         e.returnValue = ''; 
     }

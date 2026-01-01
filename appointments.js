@@ -1,5 +1,5 @@
 // appointments.js
-export function renderAppointmentsView(state, el, supabaseClient, onNavigate) {
+export function renderAppointmentsView(state, el, supabaseClient, onNavigate, t) {
     const container = el('div', { 
         className: 'view-container',
         style: 'height: calc(100vh - 120px); display: flex; flex-direction: column; overflow: hidden;' 

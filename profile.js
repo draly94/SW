@@ -1,37 +1,102 @@
 // profile.js
-export function renderProfileView(session, el, supabaseClient, showToast) {
-    const user = session.user;
 
-    // 1. Local state for inputs
+export function renderProfileView(state, el, supabaseClient, showToast, injectStyles, t) {
+    const user = state.session.user;
+    // Extract current language from state
+    const lang = state.language;
+
+    // 1. Inject Component-Specific Styles
+    injectStyles('profile-view-styles', `
+  .profile-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .profile-form-card {
+        margin-top: var(--space-lg);
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-lg);
+    }
+    .form-label {
+        font-size: var(--font-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--accent);
+    }
+    .form-input {
+        width: 100%;
+        max-width: 100% !important;
+        padding: 10px var(--space-md);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: var(--font-base);
+        color: var(--text);
+        transition: border-color 0.2s;
+    }
+        .form-input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        .readonly-input {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: var(--overlay);
+        }
+        .profile-footer {
+            margin-top: 24px;
+        }
+    `);
+
+    // 2. Define Inputs with localized loading placeholders
     const inputs = {
-        name: el('input', { type: 'text', placeholder: 'Loading name...', className: 'form-input' }),
-        // Email is readOnly because we are not syncing with Auth system
-        email: el('input', { type: 'email', value: user.email, className: 'form-input', readOnly: true, style: 'opacity: 0.7; cursor: not-allowed;' }),
-        phone: el('input', { type: 'tel', placeholder: 'Loading phone...', className: 'form-input' })
+        name: el('input', { 
+            type: 'text', 
+            placeholder: t('loadingName', lang), 
+            className: 'form-input' 
+        }),
+        email: el('input', { 
+            type: 'email', 
+            value: user.email, 
+            className: 'form-input readonly-input', 
+            readOnly: true 
+        }),
+        phone: el('input', { 
+            type: 'tel', 
+            placeholder: t('loadingPhone', lang), 
+            className: 'form-input' 
+        })
     };
 
-    // 2. Fetch data from 'profiles' table immediately (Sync compatible for app.js)
+    // 3. Data Fetching Logic
     supabaseClient
         .from('profiles')
         .select('name, email, phone')
         .eq('user_id', user.id)
         .single()
         .then(({ data, error }) => {
-            if (error) {
-                // If no record exists yet, just show empty fields
-                inputs.name.value = '';
-                inputs.phone.value = '';
-            } else if (data) {
+            // Update placeholders to standard input prompts after load using state.language
+            inputs.name.placeholder = t('namePlaceholder', lang);
+            inputs.phone.placeholder = t('phonePlaceholder', lang);
+
+            if (!error && data) {
                 inputs.name.value = data.name || '';
                 inputs.phone.value = data.phone || '';
+            } else {
+                inputs.name.value = '';
+                inputs.phone.value = '';
             }
         });
 
-    // 3. Update Handler (Strictly Profiles Table)
+    // 4. Update Handler
     const handleUpdate = async (e) => {
         const btn = e.target;
+        const originalText = btn.textContent;
         btn.disabled = true;
-        btn.textContent = 'Updating...';
+        btn.textContent = t('updating', lang);
 
         try {
             const { error: dbError } = await supabaseClient
@@ -39,50 +104,55 @@ export function renderProfileView(session, el, supabaseClient, showToast) {
                 .upsert({
                     user_id: user.id,
                     name: inputs.name.value,
-                    email: user.email, // Keep consistent with auth email
+                    email: user.email,
                     phone: inputs.phone.value
                 });
 
             if (dbError) throw dbError;
-
-            showToast('Profile updated successfully!');
+            showToast(t('updateSuccess', lang));
 
         } catch (err) {
-            showToast(err.message, 'error');
-            console.error('Database Update Error:', err);
+            showToast(err.message || t('updateError', lang), 'error');
+            console.error('Update Error:', err);
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Save Changes';
+            btn.textContent = originalText;
         }
     };
 
-    // 4. Return UI elements (Synchronous array for app.js router)
+    // 5. Build and Return UI
     return [
         el('div', { className: 'view-header' },
-            el('h1', {}, 'User Profile'),
-            el('p', { className: 'view-subtitle' }, 'Update your personal information')
+            el('div', {},
+                el('h1', {}, t('profileTitle', lang)),
+                el('p', { className: 'view-subtitle' }, t('profileSubtitle', lang))
+            )
         ),
-        el('div', { className: 'content-card profile-form' },
-            el('div', { className: 'section-title' }, 'Account Details'),
-            
-            el('div', { className: 'form-group' },
-                el('label', {}, 'Full Name'),
-                inputs.name
-            ),
-            el('div', { className: 'form-group' },
-                el('label', {}, 'Email Address'),
-                inputs.email
-            ),
-            el('div', { className: 'form-group' },
-                el('label', {}, 'Phone Number'),
-                inputs.phone
-            ),
+        el('div', { className: 'profile-container' },
+            el('div', { className: 'content-card profile-form-card' },
+                el('div', { className: 'section-title' }, t('accountDetails', lang)),
+                
+                el('div', { className: 'form-group' },
+                    el('label', { className: 'form-label' }, t('fullName', lang)),
+                    inputs.name
+                ),
+                el('div', { className: 'form-group' },
+                    el('label', { className: 'form-label' }, t('emailAddress', lang)),
+                    inputs.email
+                ),
+                el('div', { className: 'form-group' },
+                    el('label', { className: 'form-label' }, t('phoneNumber', lang)),
+                    inputs.phone
+                ),
 
-            el('button', { 
-                className: 'primary-btn', 
-                style: 'margin-top: 20px; width: 100%;',
-                onclick: handleUpdate 
-            }, 'Save Changes')
+                el('div', { className: 'profile-footer' },
+                    el('button', { 
+                        className: 'primary-btn', 
+                        style: 'width: 100%;',
+                        onclick: handleUpdate 
+                    }, t('saveChanges', lang))
+                )
+            )
         )
     ];
 }
